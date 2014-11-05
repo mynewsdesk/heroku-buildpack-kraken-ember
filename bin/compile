@@ -61,3 +61,6 @@ if test -d $build_dir/ember/bower_components; then
   status "Caching bower_components directory for future builds"
   cp -r $build_dir/ember/bower_components $cache_dir/ember
 fi
+
+status "Building ember app"
+ember build --output-path ../public/tool --environment production
