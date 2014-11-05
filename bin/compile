@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+
+set -e            # fail fast
+set -o pipefail   # don't ignore exit codes when piping output
+# set -x          # enable debugging
+
+# Configure directories
+build_dir=$1
+cache_dir=$2
+env_dir=$3
+bp_dir=$(cd $(dirname $0); cd ..; pwd)
+
+# Load some convenience functions like status(), echo(), and indent()
+source $bp_dir/bin/common.sh
+
+# Resolve node version using semver.io
+node_version=$(curl --silent --get --data-urlencode "range=${semver_range}" https://semver.io/node/resolve)
+
+# Run subsequent node/npm commands from the build/ember path
+cd $build_dir/ember
+
+if test -d $cache_dir/ember/node_modules; then
+  status "Restoring node_modules directory from cache"
+  cp -r $cache_dir/ember/node_modules $build_dir/ember
+
+  status "Pruning cached node modules not specified in package.json"
+  npm prune 2>&1 | indent
+fi
+
+if test -d $cache_dir/ember/bower_components; then
+  status "Restoring bower_components directory from cache"
+  cp -r $cache_dir/ember/bower_components $build_dir/ember
+
+  status "Pruning cached bower components not specified in package.json"
+  bower prune 2>&1 | indent
+fi
+
+# Scope config var availability only to `npm install`
+(
+  if [ -d "$env_dir" ]; then
+    status "Exporting config vars to environment"
+    export_env_dir $env_dir
+  fi
+
+  status "Installing dependencies"
+  # Make npm output to STDOUT instead of its default STDERR
+  npm install --userconfig $build_dir/ember/.npmrc --production 2>&1 | indent
+)
+
+rm -rf $cache_dir/ember
+mkdir -p $cache_dir/ember
+
+# If app has a node_modules directory, cache it.
+if test -d $build_dir/ember/node_modules; then
+  status "Caching node_modules directory for future builds"
+  cp -r $build_dir/ember/node_modules $cache_dir/ember
+fi
+
+# If app has a bower_components directory, cache it.
+if test -d $build_dir/ember/bower_components; then
+  status "Caching bower_components directory for future builds"
+  cp -r $build_dir/ember/bower_components $cache_dir/ember
+fi
