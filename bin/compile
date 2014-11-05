@@ -45,6 +45,8 @@ fi
   status "Installing dependencies"
   # Make npm output to STDOUT instead of its default STDERR
   npm install --userconfig $build_dir/ember/.npmrc --production 2>&1 | indent
+
+  bower install --production 2>&1 | indent
 )
 
 rm -rf $cache_dir/ember
