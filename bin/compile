@@ -14,7 +14,7 @@ bp_dir=$(cd $(dirname $0); cd ..; pwd)
 source $bp_dir/bin/common.sh
 
 # Make bins available from nodejs buildpack
-PATH=$build_dir/vendor/node/bin:$PATH
+PATH=$build_dir/vendor/node/bin:$build_dir/node_modules/.bin:$PATH
 
 # Resolve node version using semver.io
 node_version=$(curl --silent --get --data-urlencode "range=${semver_range}" https://semver.io/node/resolve)
